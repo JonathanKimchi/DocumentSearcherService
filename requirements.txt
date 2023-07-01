@@ -7,3 +7,4 @@ tiktoken
 pypdf
 docx2txt
 unstructured
+urllib3==1.26.6 
