@@ -6,3 +6,4 @@ chromadb
 tiktoken
 pypdf
 docx2txt
+unstructured
