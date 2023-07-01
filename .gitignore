@@ -1,0 +1,4 @@
+/data/*
+.chroma*
+.env
+__pycache__
