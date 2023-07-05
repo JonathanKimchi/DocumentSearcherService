@@ -33,4 +33,4 @@ class OpenAssistantModel:
     def get_model_pipeline(cls):
         return HuggingFacePipeline(pipeline=cls()._instance.generate_text)#type: ignore
 
-open_assistant_model = OpenAssistantModel()
+# open_assistant_model = OpenAssistantModel()

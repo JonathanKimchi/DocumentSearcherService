@@ -3,7 +3,7 @@ from model.OpenAssistantModel import OpenAssistantModel
 
 class ModelFactory:
     _instances = {
-        'local': OpenAssistantModel(),
+        'local': LocalModel(),
         # add other model types here
     }
 
