@@ -1,20 +1,20 @@
 import transformers
 from langchain.llms import HuggingFacePipeline
 
-class LocalModel:
+class OpenAssistantModel:
     _instance = None
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.model = transformers.AutoModelForCausalLM.from_pretrained(#type: ignore
-                'mosaicml/mpt-7b-instruct',
+                "OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5",
                 trust_remote_code=True,
                 max_seq_len=2048
             )
             cls._instance.model.eval()#type: ignore
 
-            cls._instance.tokenizer = transformers.AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")#type: ignore
+            cls._instance.tokenizer = transformers.AutoTokenizer.from_pretrained("OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5")#type: ignore
 
             cls._instance.generate_text = transformers.pipeline(#type: ignore
                 model=cls._instance.model, tokenizer=cls._instance.tokenizer,#type: ignore
@@ -33,5 +33,4 @@ class LocalModel:
     def get_model_pipeline(cls):
         return HuggingFacePipeline(pipeline=cls()._instance.generate_text)#type: ignore
 
-# local_model = LocalModel()
-# TODO: Uncomment when we have better hardware
+open_assistant_model = OpenAssistantModel()

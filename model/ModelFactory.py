@@ -1,8 +1,9 @@
 from model.LocalModel import LocalModel
+from model.OpenAssistantModel import OpenAssistantModel
 
 class ModelFactory:
     _instances = {
-        'local': LocalModel(),
+        'local': OpenAssistantModel(),
         # add other model types here
     }
 
