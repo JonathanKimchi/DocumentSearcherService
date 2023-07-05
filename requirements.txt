@@ -10,3 +10,7 @@ unstructured
 urllib3==1.26.6 
 transformers
 torch
+accelerate
+einops
+wikipedia
+xformers
