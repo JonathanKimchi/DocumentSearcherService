@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, jsonify, request
 from proxy.datebase_proxy import database_proxy
 

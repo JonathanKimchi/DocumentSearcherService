@@ -38,4 +38,4 @@ class LocalModel:
     def get_model_pipeline(cls):
         return HuggingFacePipeline(pipeline=cls()._instance.generate_text)#type: ignore
 
-local_model = LocalModel()
+# local_model = LocalModel()

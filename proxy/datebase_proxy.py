@@ -10,7 +10,7 @@ class DatabaseProxy:
         self.index = VectorstoreIndexCreator().from_documents(self.loader.load())
         self.model_factory = model_factory
 
-    def get_data(self, query: str, model_type: str = 'local'):
+    def get_data(self, query: str, model_type: str = 'open-ai'):
         model = self.model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
         return self.index.query(query, llm=llm)
