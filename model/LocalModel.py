@@ -1,8 +1,9 @@
 import transformers
 from langchain.llms import HuggingFacePipeline
 from torch import cuda, bfloat16
+from model.BaseModel import BaseModel
 
-class LocalModel:
+class LocalModel(BaseModel):
     _instance = None
 
     def __new__(cls):
