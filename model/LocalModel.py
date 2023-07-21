@@ -1,5 +1,5 @@
 import transformers
-from langchain.llms import HuggingFacePipeline
+from langchain.llms import HuggingFacePipeline, LlamaCpp
 from torch import cuda, bfloat16
 from model.BaseModel import BaseModel
 

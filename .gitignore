@@ -3,3 +3,4 @@
 .env
 __pycache__
 .vercel
+/model_data/*

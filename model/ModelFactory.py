@@ -1,5 +1,5 @@
 from model.LocalModel import LocalModel
-from model.OpenAssistantModel import OpenAssistantModel
+from model.LlamaModel import LlamaModel
 from model.OpenAiModel import OpenAiModel
 from model.BaseModel import BaseModel
 
@@ -7,7 +7,8 @@ class ModelFactory:
     _instances = {
         # 'local': LocalModel(),
         'open-ai': OpenAiModel(),#type: ignore
-        # add other model types here
+        'llama': LlamaModel()
+        # add other model types heren
     }
 
     @staticmethod
