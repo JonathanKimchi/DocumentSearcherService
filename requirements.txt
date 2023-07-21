@@ -14,3 +14,4 @@ accelerate
 einops
 wikipedia
 xformers
+llama-cpp-python==0.1.68
