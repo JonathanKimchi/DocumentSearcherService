@@ -15,22 +15,10 @@ class LlamaModel(BaseModel):
 
             cls._instance.tokenizer = transformers.AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")#type: ignore
 
-            # cls._instance.generate_text = transformers.pipeline(#type: ignore
-            #     model=cls._instance.model, tokenizer=cls._instance.tokenizer,#type: ignore
-            #     return_full_text=True,  # langchain expects the full text
-            #     task='text-generation',
-            #     # we pass model parameters here too
-            #     device=cls._instance.device,#type: ignore
-            #     temperature=0.1,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
-            #     top_p=0.15,  # select from top tokens whose probability add up to 15%
-            #     top_k=0,  # select from top 0 tokens (because zero, relies on top_p)
-            #     max_new_tokens=64,  # mex number of tokens to generate in the output
-            #     repetition_penalty=1.1  # without this output begins repeating
-            # )
         return cls._instance
 
     @classmethod
     def get_model_pipeline(cls):
-        return cls()._instance.llm#HuggingFacePipeline(pipeline=cls()._instance.generate_text)#type: ignore
+        return cls()._instance.llm#type: ignore
 
 llama_model = LlamaModel()
