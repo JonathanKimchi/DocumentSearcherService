@@ -25,7 +25,7 @@ class DatabaseProxy:
 
         start = time.time()
         res = qa(query)
-        answer, source_docs = res['result'], res['documents']
+        answer, source_docs = res['result'], res['source_documents']
         end = time.time()
 
         # Print the result
@@ -34,6 +34,7 @@ class DatabaseProxy:
         print(f"\n> Answer (took {round(end - start, 2)} s.):")
         print(answer)
 
+        print('source docs found', source_docs)
         # Print the relevant sources used for the answer
         for document in source_docs:
             print("\n> " + document.metadata["source"] + ":")
