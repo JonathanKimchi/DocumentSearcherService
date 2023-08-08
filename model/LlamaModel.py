@@ -29,4 +29,4 @@ class LlamaModel(BaseModel):
     def get_model_pipeline(cls):
         return cls()._instance.llm#type: ignore
 
-llama_model = LlamaModel()
+# llama_model = LlamaModel()

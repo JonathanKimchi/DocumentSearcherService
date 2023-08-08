@@ -7,7 +7,7 @@ class ModelFactory:
     _instances = {
         # 'local': LocalModel(),
         'open-ai': OpenAiModel(),#type: ignore
-        'llama': LlamaModel()
+        # 'llama': LlamaModel()
         # add other model types heren
     }
 

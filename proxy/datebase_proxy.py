@@ -1,6 +1,5 @@
 import os
-from langchain.document_loaders import TextLoader
-from langchain.document_loaders import DirectoryLoader
+from langchain.document_loaders import TextLoader, DirectoryLoader
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain.vectorstores import Chroma
@@ -10,8 +9,18 @@ import time
 
 class DatabaseProxy:
     def __init__(self):
+        self.directory = 'data'
+        self.load_database()
+
+    def set_database_name(self, name: str):
+        self.directory = name
+
+    def get_database_name(self):
+        return self.directory
+    
+    def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
-        self.loader = DirectoryLoader('data')
+        self.loader = DirectoryLoader(self.directory)
         self.index = VectorstoreIndexCreator().from_documents(self.loader.load())
         self.embedding_function = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
         self.db = Chroma(persist_directory='db', embedding_function=self.embedding_function)
@@ -45,15 +54,15 @@ class DatabaseProxy:
         return self.combine_answer_with_sources(answer, source_metadata)
 
     def update_data(self, data: str, filename: str):
-        directory = 'data'
         original_extension = os.path.splitext(filename)[1]
         if original_extension != '.txt':
             original_extension = original_extension[1:]  # remove the dot from the extension
             filename = f"{os.path.splitext(filename)[0]}-{original_extension}.txt"
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        with open(os.path.join(directory, filename), 'w') as f:
+        if not os.path.exists(self.directory):
+            os.makedirs(self.directory)
+        with open(os.path.join(self.directory, filename), 'w') as f:
             f.write(data)
+        self.load_database()
             
     def combine_answer_with_sources(self, answer: str, sources: list) -> str:
         return answer + '\n\n' + '\n\n'.join(sources)
