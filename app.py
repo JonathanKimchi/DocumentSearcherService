@@ -7,7 +7,7 @@ from flask_cors import CORS
 from proxy.datebase_proxy import database_proxy
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/data/*": {"origins": "*", "methods": "GET,HEAD,POST,OPTIONS,PUT,DELETE", "allow_headers": "*"}})
 
 @app.route('/data/get-chat-message', methods=['POST'])
 def get_data():
