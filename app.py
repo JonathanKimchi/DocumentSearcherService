@@ -26,6 +26,10 @@ def get_data():
 def update_data():
     data = request.json.get('data')
     filename = request.json.get('filename')
+    request_info = request.json.get('requestInfo')
+    client_id = request_info.get('clientId')
+    if database_proxy.get_database_name() != client_id:
+        database_proxy.set_database_name(client_id)
     return jsonify(database_proxy.update_data(data, filename))
 
 if __name__ == '__main__':
