@@ -1,6 +1,7 @@
-/data/*
 .chroma*
 .env
 __pycache__
 .vercel
 /model_data/*
+data/*
+!data/.gitkeep
