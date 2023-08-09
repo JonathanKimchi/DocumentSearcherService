@@ -16,3 +16,4 @@ wikipedia
 xformers
 llama-cpp-python
 sentence_transformers
+flask_cors
