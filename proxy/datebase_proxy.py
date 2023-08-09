@@ -10,6 +10,7 @@ import time
 class DatabaseProxy:
     def __init__(self):
         self.directory = 'data'
+        # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
 
     def set_database_name(self, name: str):
         self.directory = name
