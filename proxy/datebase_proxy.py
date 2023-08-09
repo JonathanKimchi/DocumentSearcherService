@@ -10,7 +10,6 @@ import time
 class DatabaseProxy:
     def __init__(self):
         self.directory = 'data'
-        self.load_database()
 
     def set_database_name(self, name: str):
         self.directory = name
