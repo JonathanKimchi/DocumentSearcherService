@@ -17,8 +17,10 @@ if os.environ['ENV_STAGE'] != 'production':
     credentials.Certificate('speakeasy-dev-c15db-firebase-adminsdk-fjtqq-c513c0b82a.json')
 else:
     cert = os.environ['ENCODED_FIREBASE_CREDENTIALS']
+    # translate base64 encoded string to bytes
+    cert = cert.encode('utf-8')
     cred = credentials.Certificate(cert)
-    
+
 firebase_admin.initialize_app(cred)
 
 
