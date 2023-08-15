@@ -19,7 +19,7 @@ if os.environ['ENV_STAGE'] != 'production':
 else:
     cert = os.environ['ENCODED_FIREBASE_CREDENTIALS']
     # translate base64 encoded string to bytes
-    cert = cert.decode('utf-8')
+    cert = cert.encode('utf-8')
     # decode string into json
     cert = json.loads(cert)
     cred = credentials.Certificate(cert)
