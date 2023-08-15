@@ -7,6 +7,7 @@ from flask_cors import CORS
 from proxy.datebase_proxy import database_proxy
 import os
 import json
+import base64
 
 load_dotenv()
 
@@ -17,12 +18,15 @@ cred = None
 if os.environ['ENV_STAGE'] != 'production':
     credentials.Certificate('speakeasy-dev-c15db-firebase-adminsdk-fjtqq-c513c0b82a.json')
 else:
-    cert = os.environ['ENCODED_FIREBASE_CREDENTIALS']
-    # translate base64 encoded string to bytes
-    cert = cert.encode('utf-8')
-    # decode string into json
-    cert = json.loads(cert)
-    cred = credentials.Certificate(cert)
+    encoded_cert = os.environ['ENCODED_FIREBASE_CREDENTIALS']
+    # Decode base64 encoded string to bytes
+    decoded_bytes = base64.b64decode(encoded_cert)
+    # Decode bytes to string
+    decoded_str = decoded_bytes.decode('utf-8')
+    # Load string into a JSON object
+    cert_json = json.loads(decoded_str)
+    # Initialize Firebase credentials using the decoded JSON object
+    cred = credentials.Certificate(cert_json)
 
 firebase_admin.initialize_app(cred)
 
