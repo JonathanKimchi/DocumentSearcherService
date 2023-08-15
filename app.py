@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from proxy.datebase_proxy import database_proxy
 import os
+import json
 
 load_dotenv()
 
@@ -18,7 +19,9 @@ if os.environ['ENV_STAGE'] != 'production':
 else:
     cert = os.environ['ENCODED_FIREBASE_CREDENTIALS']
     # translate base64 encoded string to bytes
-    cert = cert.encode('utf-8')
+    cert = cert.decode('utf-8')
+    # decode string into json
+    cert = json.loads(cert)
     cred = credentials.Certificate(cert)
 
 firebase_admin.initialize_app(cred)
