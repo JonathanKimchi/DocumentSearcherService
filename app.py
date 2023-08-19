@@ -77,5 +77,19 @@ def update_data():
         database_proxy.set_database_name(client_id)
     return jsonify(database_proxy.update_data(data, filename))
 
+@app.route('/data/delete-document', methods=['DELETE'])
+@authenticate
+def delete_data():
+    filename = request.json.get('filename')
+    request_info = request.json.get('requestInfo')
+    client_id = request_info.get('clientId')
+    if database_proxy.get_database_name() != client_id:
+        database_proxy.set_database_name(client_id)
+    success = database_proxy.delete_data(filename)
+    if success:
+        return jsonify({"message": "Document deleted successfully"}), 200
+    else:
+        return jsonify({"message": "Failed to delete document"}), 500
+    
 if __name__ == '__main__':
     app.run(debug=True)

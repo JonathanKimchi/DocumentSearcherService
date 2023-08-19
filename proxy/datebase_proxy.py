@@ -63,6 +63,29 @@ class DatabaseProxy:
         with open(os.path.join(self.directory, filename), 'w') as f:
             f.write(data)
         self.load_database()
+
+    def delete_data(self, filename: str) -> bool:
+        """
+        Delete data by file name.
+
+        Args:
+            filename (str): The name of the file to delete.
+
+        Returns:
+            bool: True if the deletion was successful, False otherwise.
+        """
+        file_path = os.path.join(self.directory, filename)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                self.load_database()  # Refresh the database after a delete.
+                return True
+            except Exception as e:
+                print(f"Error while deleting {filename}: {e}")
+                return False
+        else:
+            print(f"File {filename} not found.")
+            return False
             
     def combine_answer_with_sources(self, answer: str, sources: list) -> str:
         return answer + '\n\n' + '\n\n'.join(sources)
