@@ -91,5 +91,15 @@ def delete_data():
     else:
         return jsonify({"message": "Failed to delete document"}), 500
     
+@app.route('/data/list-documents', methods=['POST'])
+@authenticate
+def list_documents():
+    request_info = request.json.get('requestInfo')
+    client_id = request_info.get('clientId')
+    if database_proxy.get_database_name() != client_id:
+        database_proxy.set_database_name(client_id)
+    files = database_proxy.list_data()
+    return jsonify(files)
+    
 if __name__ == '__main__':
     app.run(debug=True)

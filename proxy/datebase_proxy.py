@@ -89,6 +89,15 @@ class DatabaseProxy:
             
     def combine_answer_with_sources(self, answer: str, sources: list) -> str:
         return answer + '\n\n' + '\n\n'.join(sources)
+    
+    def list_data(self) -> list:
+        """
+        List all the file names stored within the given directory.
+
+        Returns:
+            list: A list of file names.
+        """
+        return os.listdir(self.directory)
         
 
 database_proxy = DatabaseProxy()
