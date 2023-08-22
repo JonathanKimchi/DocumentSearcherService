@@ -92,12 +92,47 @@ class DatabaseProxy:
     
     def list_data(self) -> list:
         """
-        List all the file names stored within the given directory.
+        List all the file names stored within the given directory along with mock data for other fields.
 
         Returns:
-            list: A list of file names.
+            list: A list of dictionaries containing data for each document.
         """
-        return os.listdir(self.directory)
+        files = os.listdir(self.directory)
+        data = []
+        
+        for idx, file_name in enumerate(files, 1):
+            doc_data = {
+                "id": idx,  # Assuming a simple incremental ID based on the list index for now
+                "name": file_name,
+                "type": self.mock_file_type(file_name),  # Mock file type
+                "date": self.mock_file_date(),  # Mock file date
+                "status": self.mock_status()  # Mock status
+            }
+            data.append(doc_data)
+        return data
+
+    def mock_file_type(self, file_name: str) -> str:
+        """Return a mock file type based on file extension."""
+        _, ext = os.path.splitext(file_name)
+        ext = ext.lower()
+
+        file_types = {
+            ".txt": "Text",
+            ".pdf": "PDF",
+            ".doc": "Word",
+            ".xls": "Excel"
+        }
+        return file_types.get(ext, "Unknown")
+
+    def mock_file_date(self) -> str:
+        """Return a mock file date."""
+        today = datetime.date.today()
+        offset = datetime.timedelta(days=random.randint(0, 100))
+        return str(today - offset)
+
+    def mock_status(self) -> str:
+        """Return a mock status."""
+        return "Active"
         
 
 database_proxy = DatabaseProxy()

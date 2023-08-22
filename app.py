@@ -16,7 +16,7 @@ load_dotenv()
 cred = None
 
 if os.environ['ENV_STAGE'] != 'production':
-    credentials.Certificate('speakeasy-dev-c15db-firebase-adminsdk-fjtqq-c513c0b82a.json')
+    cred = credentials.Certificate('speakeasy-dev-c15db-firebase-adminsdk-fjtqq-c513c0b82a.json')
 else:
     encoded_cert = os.environ['ENCODED_FIREBASE_CREDENTIALS']
     # Decode base64 encoded string to bytes
@@ -29,7 +29,6 @@ else:
     cred = credentials.Certificate(cert_json)
 
 firebase_admin.initialize_app(cred)
-
 
 app = Flask(__name__)
 CORS(app, resources={r"/data/*": {"origins": "*", "methods": "GET,HEAD,POST,OPTIONS,PUT,DELETE", "allow_headers": "*"}})
@@ -47,6 +46,7 @@ def authenticate(f):
             decoded_token = auth.verify_id_token(token.split(" ")[1])
             request.user = decoded_token
         except Exception as e:
+            print(e)
             return jsonify({"message": "Invalid token"}), 401
         
         return f(*args, **kwargs)
