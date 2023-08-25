@@ -6,6 +6,8 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
 from model.ModelFactory import model_factory
 import time
+import datetime
+import random
 
 class DatabaseProxy:
     def __init__(self):
@@ -78,7 +80,10 @@ class DatabaseProxy:
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
-                self.load_database()  # Refresh the database after a delete.
+                try:
+                    self.load_database()  # Refresh the database after a delete.
+                except Exception as e:
+                    print(f"Error while reloading database after delete: {e}")
                 return True
             except Exception as e:
                 print(f"Error while deleting {filename}: {e}")
@@ -104,6 +109,7 @@ class DatabaseProxy:
             doc_data = {
                 "id": idx,  # Assuming a simple incremental ID based on the list index for now
                 "name": file_name,
+                "filepath": f"{self.directory}/{file_name}",
                 "type": self.mock_file_type(file_name),  # Mock file type
                 "date": self.mock_file_date(),  # Mock file date
                 "status": self.mock_status()  # Mock status
