@@ -100,6 +100,20 @@ def list_documents():
         database_proxy.set_database_name(client_id)
     files = database_proxy.list_data()
     return jsonify(files)
+
+@app.route('/data/download-document', methods=['POST'])
+@authenticate
+def download_document():
+    filename = request.json.get('filename')
+    request_info = request.json.get('requestInfo')
+    client_id = request_info.get('clientId')
+    if database_proxy.get_database_name() != client_id:
+        database_proxy.set_database_name(client_id)
+    data = database_proxy.download_data(filename)
+    if data is not None:
+        return jsonify({"data": data})
+    else:
+        return jsonify({"error": "File not found"}), 404
     
 if __name__ == '__main__':
     app.run(debug=True)

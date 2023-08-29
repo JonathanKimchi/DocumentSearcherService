@@ -51,9 +51,12 @@ class DatabaseProxy:
         for document in source_docs:
             print("\n> " + document.metadata["source"] + ":")
 
-        source_metadata = [document.metadata["source"] for document in source_docs]
-
-        return self.combine_answer_with_sources(answer, source_metadata)
+        return self.combine_answer_with_sources(answer, self.get_source_filenames(source_docs))
+    
+    def get_source_filenames(self, source_docs: list) -> list:
+        source_full_filepaths = [document.metadata["source"] for document in source_docs]
+        source_filenames = [os.path.basename(source_full_filepath) for source_full_filepath in source_full_filepaths]
+        return source_filenames
 
     def update_data(self, data: str, filename: str):
         original_extension = os.path.splitext(filename)[1]
@@ -65,6 +68,16 @@ class DatabaseProxy:
         with open(os.path.join(self.directory, filename), 'w') as f:
             f.write(data)
         self.load_database()
+
+    def download_data(self, filename: str):
+        file_path = os.path.join(self.directory, filename)
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                data = f.read()
+            return data
+        else:
+            print(f"File {filename} not found.")
+            return False
 
     def delete_data(self, filename: str) -> bool:
         """
@@ -93,7 +106,10 @@ class DatabaseProxy:
             return False
             
     def combine_answer_with_sources(self, answer: str, sources: list) -> str:
-        return answer + '\n\n' + '\n\n'.join(sources)
+        return {
+            "answer": answer,
+            "sources": sources
+        }
     
     def list_data(self) -> list:
         """
