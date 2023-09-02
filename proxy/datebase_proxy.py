@@ -65,6 +65,8 @@ class DatabaseProxy:
     def get_source_filenames(self, source_docs: list) -> list:
         source_full_filepaths = [document.metadata["source"] for document in source_docs]
         source_filenames = [os.path.basename(source_full_filepath) for source_full_filepath in source_full_filepaths]
+        #now, dedupe the list
+        source_filenames = list(dict.fromkeys(source_filenames))
         return source_filenames
 
     def update_data(self, data: str, filename: str):
