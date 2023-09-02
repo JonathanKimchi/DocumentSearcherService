@@ -1,5 +1,6 @@
 import os
 from langchain.document_loaders import TextLoader, DirectoryLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain.vectorstores import Chroma
@@ -9,31 +10,39 @@ import time
 import datetime
 import random
 
+from langchain.llms import OpenAI
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor
+
 class DatabaseProxy:
     def __init__(self):
         self.directory = 'data'
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
 
-    def set_database_name(self, name: str):
+    def set_client_id(self, name: str):
         self.directory = name
 
-    def get_database_name(self):
+    def get_client_id(self):
         return self.directory
     
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
         self.loader = DirectoryLoader(self.directory)
-        self.index = VectorstoreIndexCreator().from_documents(self.loader.load())
+        data = self.loader.load()
+        texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
+        self.index = VectorstoreIndexCreator().from_documents(texts)
         self.embedding_function = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
         self.db = Chroma(persist_directory='db', embedding_function=self.embedding_function)
-        self.retriever = self.index.vectorstore.as_retriever()
+        self.retriever = self.index.vectorstore.as_retriever(search_kwargs={"k": 10})
         # self.retriever = self.db.as_retriever()
         self.model_factory = model_factory
 
     def get_data(self, query: str, model_type: str = 'open-ai'):
         model = self.model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=self.retriever, return_source_documents=True)
+        compressor = LLMChainExtractor.from_llm(OpenAI(temperature=0))
+        compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
+        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=compression_retriever, return_source_documents=True)
 
         start = time.time()
         res = qa(query)

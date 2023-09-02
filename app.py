@@ -61,8 +61,8 @@ def get_data():
     client_id = request_info.get('clientId')
     print('clientId', client_id)
     print(query)
-    if database_proxy.get_database_name() != client_id:
-        database_proxy.set_database_name(client_id)
+    if database_proxy.get_client_id() != client_id:
+        database_proxy.set_client_id(client_id)
         database_proxy.load_database()
     return jsonify(database_proxy.get_data(query))
 
@@ -73,8 +73,8 @@ def update_data():
     filename = request.json.get('filename')
     request_info = request.json.get('requestInfo')
     client_id = request_info.get('clientId')
-    if database_proxy.get_database_name() != client_id:
-        database_proxy.set_database_name(client_id)
+    if database_proxy.get_client_id() != client_id:
+        database_proxy.set_client_id(client_id)
     return jsonify(database_proxy.update_data(data, filename))
 
 @app.route('/data/delete-document', methods=['POST'])
@@ -83,8 +83,8 @@ def delete_data():
     filename = request.json.get('filename')
     request_info = request.json.get('requestInfo')
     client_id = request_info.get('clientId')
-    if database_proxy.get_database_name() != client_id:
-        database_proxy.set_database_name(client_id)
+    if database_proxy.get_client_id() != client_id:
+        database_proxy.set_client_id(client_id)
     success = database_proxy.delete_data(filename)
     if success:
         return jsonify({"message": "Document deleted successfully"}), 200
@@ -96,8 +96,8 @@ def delete_data():
 def list_documents():
     request_info = request.json.get('requestInfo')
     client_id = request_info.get('clientId')
-    if database_proxy.get_database_name() != client_id:
-        database_proxy.set_database_name(client_id)
+    if database_proxy.get_client_id() != client_id:
+        database_proxy.set_client_id(client_id)
     files = database_proxy.list_data()
     return jsonify(files)
 
@@ -107,8 +107,8 @@ def download_document():
     filename = request.json.get('filename')
     request_info = request.json.get('requestInfo')
     client_id = request_info.get('clientId')
-    if database_proxy.get_database_name() != client_id:
-        database_proxy.set_database_name(client_id)
+    if database_proxy.get_client_id() != client_id:
+        database_proxy.set_client_id(client_id)
     data = database_proxy.download_data(filename)
     if data is not None:
         return jsonify({"data": data})
