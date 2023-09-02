@@ -10,6 +10,8 @@ import time
 import datetime
 import random
 
+from langchain.chat_models import ChatOpenAI
+
 from langchain.llms import OpenAI
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
@@ -40,7 +42,7 @@ class DatabaseProxy:
     def get_data(self, query: str, model_type: str = 'open-ai'):
         model = self.model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
-        compressor = LLMChainExtractor.from_llm(OpenAI(temperature=0))
+        compressor = LLMChainExtractor.from_llm(ChatOpenAI())
         compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
         qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=compression_retriever, return_source_documents=True)
 
