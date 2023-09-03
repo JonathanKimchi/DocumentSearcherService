@@ -35,7 +35,7 @@ class DatabaseProxy:
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
         # TODO: replace this loader with a loaderFactory.
-        self.loader = S3DirectoryLoader(bucket=self.client_id)
+        self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id)
         data = self.loader.load()
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
         self.index = VectorstoreIndexCreator().from_documents(texts)
@@ -77,7 +77,7 @@ class DatabaseProxy:
         source_filenames = list(dict.fromkeys(source_filenames))
         return source_filenames
 
-    def update_data(self, data: str, filename: str):
+    def update_data(self, data: bytes, filename: str):
         self.s3_repository.update_data(data, filename)
         self.load_database()  # Re-load the database
 
