@@ -4,66 +4,54 @@ import datetime
 import random
 
 class S3FileRepository:
-    def __init__(self, bucket_name):
+    def __init__(self, folder_name):
         self.s3_client = boto3.client('s3')
-        self.bucket_name = bucket_name
+        self.bucket_name = 'speakeasy-s3-bucket'
+        self.folder_name = folder_name
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
 
-    def set_bucket_name(self, bucket_name: str):
-        self.bucket_name = bucket_name
-        self.ensure_bucket_exists()
-
-    def ensure_bucket_exists(self):
-        """Ensure that the bucket exists. If not, create it."""
-        try:
-            buckets = [bucket['Name'] for bucket in self.s3_client.list_buckets()['Buckets']]
-            if self.bucket_name not in buckets:
-                self.s3_client.create_bucket(Bucket=self.bucket_name)
-                print(f"Bucket {self.bucket_name} created.")
-            else:
-                print(f"Bucket {self.bucket_name} already exists.")
-        except Exception as e:
-            print(f"An error occurred while creating or checking the bucket: {e}")
+    def set_bucket_name(self, folder_name: str):
+        self.folder_name = folder_name
 
     def update_data(self, data: bytes, filename: str):
+        key = f"{self.folder_name}/{filename}"
         _, file_extension = os.path.splitext(filename)
         content_type_map = {
             '.txt': 'text/plain',
             '.pdf': 'application/pdf',
             '.doc': 'application/msword',
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            # ... Add other file types here as needed
         }
-        content_type = content_type_map.get(file_extension, 'application/octet-stream')  # Default to binary data
-        self.s3_client.put_object(Body=data, Bucket=self.bucket_name, Key=filename, ContentType=content_type)
-
+        content_type = content_type_map.get(file_extension, 'application/octet-stream')
+        self.s3_client.put_object(Body=data, Bucket=self.bucket_name, Key=key, ContentType=content_type)
 
     def download_data(self, filename: str):
+        key = f"{self.folder_name}/{filename}"
         try:
-            obj = self.s3_client.get_object(Bucket=self.bucket_name, Key=filename)
-            return obj['Body'].read()  # Now, it returns bytes
+            obj = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+            return obj['Body'].read()
         except Exception as e:
             print(f"File {filename} not found: {e}")
             return False
 
     def delete_data(self, filename: str) -> bool:
+        key = f"{self.folder_name}/{filename}"
         try:
-            self.s3_client.delete_object(Bucket=self.bucket_name, Key=filename)
+            self.s3_client.delete_object(Bucket=self.bucket_name, Key=key)
             return True
         except Exception as e:
             print(f"Error while deleting {filename}: {e}")
             return False
 
     def list_data(self) -> list:
-        objects = self.s3_client.list_objects(Bucket=self.bucket_name)
+        objects = self.s3_client.list_objects(Bucket=self.bucket_name, Prefix=f"{self.folder_name}/")
         data = []
-
         for idx, obj in enumerate(objects.get('Contents', []), 1):
-            file_name = obj['Key']
+            file_name = obj['Key'].replace(f"{self.folder_name}/", "")
             doc_data = {
                 "id": idx,
                 "name": file_name,
-                "filepath": f"s3://{self.bucket_name}/{file_name}",
+                "filepath": f"s3://{self.bucket_name}/{obj['Key']}",
                 "type": self.mock_file_type(file_name),
                 "date": self.mock_file_date(),
                 "status": self.mock_status()
@@ -74,7 +62,6 @@ class S3FileRepository:
     def mock_file_type(self, file_name: str) -> str:
         _, ext = os.path.splitext(file_name)
         ext = ext.lower()
-
         file_types = {
             ".txt": "Text",
             ".pdf": "PDF",
