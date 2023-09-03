@@ -19,3 +19,4 @@ sentence_transformers
 flask_cors
 firebase_admin
 boto3
+unstructured
