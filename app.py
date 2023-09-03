@@ -9,6 +9,8 @@ import os
 import json
 import base64
 
+from base64 import b64encode
+
 load_dotenv()
 
 # Initialize Firebase Admin SDK
@@ -112,9 +114,11 @@ def download_document():
     client_id = request_info.get('clientId')
     if database_proxy.get_client_id() != client_id:
         database_proxy.set_client_id(client_id)
+    
     data = database_proxy.download_data(filename)
     if data is not None:
-        return jsonify({"data": data})
+        encoded_data = b64encode(data).decode()  # Convert bytes to base64 encoded string
+        return jsonify({"data": encoded_data})
     else:
         return jsonify({"error": "File not found"}), 404
     
