@@ -5,7 +5,7 @@ import random
 
 class S3FileRepository:
     def __init__(self, bucket_name):
-        self.s3_client = boto3.client('s3')
+        self.s3_client = boto3.client('s3', region_name='us-east-1')
         self.bucket_name = bucket_name
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
 
@@ -18,12 +18,18 @@ class S3FileRepository:
         try:
             buckets = [bucket['Name'] for bucket in self.s3_client.list_buckets()['Buckets']]
             if self.bucket_name not in buckets:
-                self.s3_client.create_bucket(Bucket=self.bucket_name)
+                self.s3_client.create_bucket(
+                    Bucket=self.bucket_name,
+                    CreateBucketConfiguration={
+                        'LocationConstraint': 'us-east-1'
+                    }
+                )
                 print(f"Bucket {self.bucket_name} created.")
             else:
                 print(f"Bucket {self.bucket_name} already exists.")
         except Exception as e:
             print(f"An error occurred while creating or checking the bucket: {e}")
+
 
     def update_data(self, data: bytes, filename: str):
         _, file_extension = os.path.splitext(filename)
