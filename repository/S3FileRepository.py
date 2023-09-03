@@ -5,7 +5,7 @@ import random
 
 class S3FileRepository:
     def __init__(self, bucket_name):
-        self.s3_client = boto3.client('s3', region_name='us-east-1')
+        self.s3_client = boto3.client('s3', region_name='us-east-2')
         self.bucket_name = bucket_name
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
 
@@ -21,7 +21,7 @@ class S3FileRepository:
                 self.s3_client.create_bucket(
                     Bucket=self.bucket_name,
                     CreateBucketConfiguration={
-                        'LocationConstraint': 'us-east-1'
+                        'LocationConstraint': 'us-east-2'
                     }
                 )
                 print(f"Bucket {self.bucket_name} created.")
