@@ -8,6 +8,6 @@ class DirectoryLoaderRequest(LoaderGeneratorRequest):
         self.directory = directory
 
 class S3LoaderRequest(LoaderGeneratorRequest):
-    def __init__(self, bucket_name: str, filenames: List[str]):
+    def __init__(self, bucket_name: str, filename: str):
         self.bucket_name = bucket_name
-        self.filenames = filenames
+        self.filename = filename

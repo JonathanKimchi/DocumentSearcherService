@@ -1,8 +1,9 @@
 from loader.DirectoryLoaderGenerator import DirectoryLoaderGenerator
 from loader.S3FileLoaderGenerator import S3FileLoaderGenerator
 
-
 import json
+
+from request_objects.LoaderGeneratorRequest import DirectoryLoaderRequest, S3LoaderRequest
 
 class LoaderGeneratorFactory:
 
@@ -18,8 +19,8 @@ class LoaderGeneratorFactory:
         
         elif data_type == "s3":
             bucket_name = data_details.get("bucket_name")
-            filenames = data_details.get("filenames")
-            request = S3LoaderRequest(bucket_name, filenames)
+            filename = data_details.get("filename")
+            request = S3LoaderRequest(bucket_name, filename)
             return S3FileLoaderGenerator(request)
         
         else:

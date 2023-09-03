@@ -18,3 +18,4 @@ llama-cpp-python
 sentence_transformers
 flask_cors
 firebase_admin
+boto3

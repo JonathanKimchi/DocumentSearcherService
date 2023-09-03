@@ -15,21 +15,27 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
+from repository.S3FileRepository import S3FileRepository
+from langchain.document_loaders import S3DirectoryLoader
 
 class DatabaseProxy:
-    def __init__(self):
-        self.directory = 'data'
+    def __init__(self, client_id):
+        self.client_id = client_id
+        self.s3_repository = S3FileRepository(client_id)
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
+        # TODO: initialize different file repositories based on the client_id or based on the environment variable
 
-    def set_client_id(self, name: str):
-        self.directory = name
+    def set_client_id(self, client_id: str):
+        self.client_id = client_id
+        self.s3_repository.set_bucket_name(client_id)
 
     def get_client_id(self):
-        return self.directory
+        return self.client_id
     
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
-        self.loader = DirectoryLoader(self.directory)
+        # TODO: replace this loader with a loaderFactory.
+        self.loader = S3DirectoryLoader(bucket=self.client_id)
         data = self.loader.load()
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
         self.index = VectorstoreIndexCreator().from_documents(texts)
@@ -72,79 +78,26 @@ class DatabaseProxy:
         return source_filenames
 
     def update_data(self, data: str, filename: str):
-        original_extension = os.path.splitext(filename)[1]
-        if original_extension != '.txt':
-            original_extension = original_extension[1:]  # remove the dot from the extension
-            filename = f"{os.path.splitext(filename)[0]}-{original_extension}.txt"
-        if not os.path.exists(self.directory):
-            os.makedirs(self.directory)
-        with open(os.path.join(self.directory, filename), 'w') as f:
-            f.write(data)
-        self.load_database()
+        self.s3_repository.update_data(data, filename)
+        self.load_database()  # Re-load the database
 
     def download_data(self, filename: str):
-        file_path = os.path.join(self.directory, filename)
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as f:
-                data = f.read()
-            return data
-        else:
-            print(f"File {filename} not found.")
-            return False
+        return self.s3_repository.download_data(filename)
 
     def delete_data(self, filename: str) -> bool:
-        """
-        Delete data by file name.
+        result = self.s3_repository.delete_data(filename)
+        if result:
+            self.load_database()  # Re-load the database
+        return result
 
-        Args:
-            filename (str): The name of the file to delete.
-
-        Returns:
-            bool: True if the deletion was successful, False otherwise.
-        """
-        file_path = os.path.join(self.directory, filename)
-        if os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-                try:
-                    self.load_database()  # Refresh the database after a delete.
-                except Exception as e:
-                    print(f"Error while reloading database after delete: {e}")
-                return True
-            except Exception as e:
-                print(f"Error while deleting {filename}: {e}")
-                return False
-        else:
-            print(f"File {filename} not found.")
-            return False
+    def list_data(self) -> list:
+        return self.s3_repository.list_data()
             
     def combine_answer_with_sources(self, answer: str, sources: list) -> str:
         return {
             "answer": answer,
             "sources": sources
         }
-    
-    def list_data(self) -> list:
-        """
-        List all the file names stored within the given directory along with mock data for other fields.
-
-        Returns:
-            list: A list of dictionaries containing data for each document.
-        """
-        files = os.listdir(self.directory)
-        data = []
-        
-        for idx, file_name in enumerate(files, 1):
-            doc_data = {
-                "id": idx,  # Assuming a simple incremental ID based on the list index for now
-                "name": file_name,
-                "filepath": f"{self.directory}/{file_name}",
-                "type": self.mock_file_type(file_name),  # Mock file type
-                "date": self.mock_file_date(),  # Mock file date
-                "status": self.mock_status()  # Mock status
-            }
-            data.append(doc_data)
-        return data
 
     def mock_file_type(self, file_name: str) -> str:
         """Return a mock file type based on file extension."""
@@ -155,6 +108,7 @@ class DatabaseProxy:
             ".txt": "Text",
             ".pdf": "PDF",
             ".doc": "Word",
+            ".docx": "Word",
             ".xls": "Excel"
         }
         return file_types.get(ext, "Unknown")
@@ -170,4 +124,4 @@ class DatabaseProxy:
         return "Active"
         
 
-database_proxy = DatabaseProxy()
+database_proxy = DatabaseProxy('data')
