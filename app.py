@@ -69,13 +69,16 @@ def get_data():
 @app.route('/data/update-document', methods=['POST'])
 @authenticate
 def update_data():
-    data = request.json.get('data')
-    filename = request.json.get('filename')
-    request_info = request.json.get('requestInfo')
+    file = request.files.get('file')
+    filename = request.form.get('filename')
+    request_info_json = request.form.get('requestInfo')
+    request_info = json.loads(request_info_json) if request_info_json else {}
     client_id = request_info.get('clientId')
     if database_proxy.get_client_id() != client_id:
         database_proxy.set_client_id(client_id)
-    return jsonify(database_proxy.update_data(data, filename))
+    database_proxy.update_data(file, filename)  # Assumes this method now accepts bytes
+    return jsonify({"message": "Document updated successfully"}), 200
+
 
 @app.route('/data/delete-document', methods=['POST'])
 @authenticate

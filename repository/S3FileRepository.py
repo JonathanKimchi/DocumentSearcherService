@@ -25,8 +25,18 @@ class S3FileRepository:
         except Exception as e:
             print(f"An error occurred while creating or checking the bucket: {e}")
 
-    def update_data(self, data: str, filename: str):
-        self.s3_client.put_object(Body=data, Bucket=self.bucket_name, Key=filename)
+    def update_data(self, data: bytes, filename: str):
+        _, file_extension = os.path.splitext(filename)
+        content_type_map = {
+            '.txt': 'text/plain',
+            '.pdf': 'application/pdf',
+            '.doc': 'application/msword',
+            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            # ... Add other file types here as needed
+        }
+        content_type = content_type_map.get(file_extension, 'application/octet-stream')  # Default to binary data
+        self.s3_client.put_object(Body=data, Bucket=self.bucket_name, Key=filename, ContentType=content_type)
+
 
     def download_data(self, filename: str):
         try:
