@@ -10,7 +10,7 @@ class S3FileRepository:
         self.folder_name = folder_name
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
 
-    def set_bucket_name(self, folder_name: str):
+    def set_folder_name(self, folder_name: str):
         self.folder_name = folder_name
 
     def update_data(self, data: bytes, filename: str):
@@ -24,6 +24,7 @@ class S3FileRepository:
         }
         content_type = content_type_map.get(file_extension, 'application/octet-stream')
         self.s3_client.put_object(Body=data, Bucket=self.bucket_name, Key=key, ContentType=content_type)
+        print('Uploaded to S3. Bucket: {}, Key: {}'.format(self.bucket_name, key))
 
     def download_data(self, filename: str):
         key = f"{self.folder_name}/{filename}"

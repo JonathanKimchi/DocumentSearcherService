@@ -15,8 +15,11 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
+from proxy.SlackProxy import SlackProxy
+from proxy.SpeakeasyBackendProxy import SpeakeasyBackendProxy
 from repository.S3FileRepository import S3FileRepository
 from langchain.document_loaders import S3DirectoryLoader
+from langchain.document_loaders import JSONLoader
 
 class DatabaseProxy:
     def __init__(self, client_id):
@@ -27,14 +30,39 @@ class DatabaseProxy:
 
     def set_client_id(self, client_id: str):
         self.client_id = client_id
-        self.s3_repository.set_bucket_name(client_id)
+        self.s3_repository.set_folder_name(client_id)
 
     def get_client_id(self):
         return self.client_id
     
+    def save_slack_conversations_to_s3(self, slack_access_token):
+        # Fetch list of all channels
+        slack_proxy = SlackProxy(slack_access_token)
+        channels = slack_proxy.fetch_channels()
+        if not channels:
+            # throw exception
+            return
+        
+        for channel in channels:
+            # Fetch messages from each channel
+            messages = slack_proxy.fetch_messages_from_channel(channel['id'])
+            if messages:
+                # Convert messages to text string
+                text_string = slack_proxy.convert_messages_into_text(messages)
+
+                # Convert text string to bytes
+                text_bytes = text_string.encode('utf-8')
+                print(f"Uploading {channel['name']} to S3...")
+
+                # Upload to S3
+                self.s3_repository.update_data(data=text_bytes, filename=f"{channel['name']}.txt")
+        return
+    
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
         # TODO: replace this loader with a loaderFactory.
+        # TODO: don't make API calls here to save on cost.
+
         self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id)
         data = self.loader.load()
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)

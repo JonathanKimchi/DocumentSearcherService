@@ -4,6 +4,7 @@ from firebase_admin import credentials, auth
 from functools import wraps
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from proxy.SpeakeasyBackendProxy import speakeasy_backend_proxy
 from proxy.datebase_proxy import database_proxy
 import os
 import json
@@ -47,6 +48,7 @@ def authenticate(f):
             # Remove "Bearer " from the token
             decoded_token = auth.verify_id_token(token.split(" ")[1])
             request.user = decoded_token
+            request.user_encoded = token.split(" ")[1]
         except Exception as e:
             print(e)
             return jsonify({"message": "Invalid token"}), 401
@@ -121,6 +123,22 @@ def download_document():
         return jsonify({"data": encoded_data})
     else:
         return jsonify({"error": "File not found"}), 404
+    
+@app.route('/data/upload-slack-messages-to-s3', methods=['POST'])
+@authenticate
+def upload_slack_messages_to_s3():
+    print("starting upload_slack_messages_to_s3")
+    request_info = request.json.get('requestInfo')
+    print(request_info)
+    client_id = request_info.get('clientId')
+    if database_proxy.get_client_id() != client_id:
+        database_proxy.set_client_id(client_id)
+    print("getting slack access token")
+    slack_access_token = speakeasy_backend_proxy.get_slack_access_token_for_chatbot(client_id, request.user_encoded)
+    print("saving slack conversations to s3")
+    database_proxy.save_slack_conversations_to_s3(slack_access_token)
+    database_proxy.load_database()
+    return jsonify({"message": "Slack messages uploaded successfully"}), 200
     
 if __name__ == '__main__':
     app.run(debug=True)
