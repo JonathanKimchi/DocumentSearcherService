@@ -3,7 +3,7 @@ import os
 import requests
 
 def is_production():
-    return False #os.environ['ENV_STAGE'] == 'production'
+    return os.environ['ENV_STAGE'] == 'production'
 
 class SpeakeasyBackendProxy:
     def __init__(self):
