@@ -8,7 +8,7 @@ class ModelFactory:
         # 'local': LocalModel(),
         'open-ai': OpenAiModel(),#type: ignore
         # 'llama': LlamaModel()
-        # add other model types heren
+        # add other model types here
     }
 
     @staticmethod
