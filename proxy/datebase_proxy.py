@@ -70,11 +70,9 @@ class DatabaseProxy:
         self.embedding_function = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
         self.db = Chroma(persist_directory='db', embedding_function=self.embedding_function)
         self.retriever = self.index.vectorstore.as_retriever(search_kwargs={"k": 10})
-        # self.retriever = self.db.as_retriever()
-        self.model_factory = model_factory
 
     def get_data(self, query: str, model_type: str = 'open-ai'):
-        model = self.model_factory.get_model(model_type)
+        model = model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
         compressor = LLMChainExtractor.from_llm(ChatOpenAI())
         compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
