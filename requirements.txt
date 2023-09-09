@@ -14,7 +14,7 @@ accelerate
 einops
 wikipedia
 xformers
-llama-cpp-python==0.1.81
+llama-cpp-python==0.1.78
 sentence_transformers
 flask_cors
 firebase_admin
