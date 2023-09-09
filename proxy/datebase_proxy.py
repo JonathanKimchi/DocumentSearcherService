@@ -74,7 +74,7 @@ class DatabaseProxy:
     def get_data(self, query: str, model_type: str = 'open-ai'):
         model = model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
-        compressor = LLMChainExtractor.from_llm(ChatOpenAI())
+        compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
         compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
         qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=compression_retriever, return_source_documents=True)
 
