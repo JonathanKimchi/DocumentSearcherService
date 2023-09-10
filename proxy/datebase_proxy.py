@@ -62,7 +62,6 @@ class DatabaseProxy:
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
         # TODO: replace this loader with a loaderFactory.
         # TODO: don't make API calls here to save on cost.
-
         self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id)
         data = self.loader.load()
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
@@ -74,9 +73,10 @@ class DatabaseProxy:
     def get_data(self, query: str, model_type: str = 'open-ai'):
         model = model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
-        compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
-        compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
-        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=compression_retriever, return_source_documents=True)
+        # TODO: Add this back after we finish demos for latency testing.
+        # compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
+        # compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
+        qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=self.retriever, return_source_documents=True)
 
         start = time.time()
         res = qa(query)
