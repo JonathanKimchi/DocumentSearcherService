@@ -2,10 +2,11 @@ import transformers
 from langchain.llms import HuggingFacePipeline, LlamaCpp
 from torch import cuda, bfloat16
 from model.BaseModel import BaseModel
+from langchain.llms import TextGen
 
 from llama_cpp import Llama
 
-n_gpu_layers = 40  # Change this value based on your model and your GPU VRAM pool.
+n_gpu_layers = 81  # Change this value based on your model and your GPU VRAM pool.
 n_batch = 512  # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
 
 class LlamaModel(BaseModel):
@@ -14,13 +15,7 @@ class LlamaModel(BaseModel):
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.llm = LlamaCpp(
-                model_path='model_data/llama-2-13b-chat.ggmlv3.q2_K.bin', 
-                n_ctx=3000, 
-                n_gpu_layers=n_gpu_layers,
-                n_batch=n_batch,
-                callbacks=[], 
-                verbose=False)
+            cls._instance.llm = TextGen(model_url="http://localhost:5000")
             cls._instance.tokenizer = transformers.AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")#type: ignore
 
         return cls._instance
