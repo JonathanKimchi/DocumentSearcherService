@@ -4,7 +4,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain.vectorstores import Chroma
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceBgeEmbeddings
 from model.ModelFactory import model_factory
 import time
 import datetime
@@ -66,7 +66,7 @@ class DatabaseProxy:
         data = self.loader.load()
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
         self.index = VectorstoreIndexCreator().from_documents(texts)
-        self.embedding_function = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+        self.embedding_function = HuggingFaceBgeEmbeddings(model_name='BAAI/bge-large-en')
         self.db = Chroma(persist_directory='db', embedding_function=self.embedding_function)
         self.retriever = self.index.vectorstore.as_retriever(search_kwargs={"k": 10})
 
