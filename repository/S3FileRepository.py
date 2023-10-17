@@ -21,12 +21,15 @@ class S3FileRepository:
             '.pdf': 'application/pdf',
             '.doc': 'application/msword',
             '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.xls': 'application/vnd.ms-excel',
+            '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            '.zip': 'application/zip'
         }
         content_type = content_type_map.get(file_extension, 'application/octet-stream')
         self.s3_client.put_object(Body=data, Bucket=self.bucket_name, Key=key, ContentType=content_type)
         print('Uploaded to S3. Bucket: {}, Key: {}'.format(self.bucket_name, key))
 
-    def download_data(self, filename: str):
+    def download_data(self, filename: str) -> bytes:
         key = f"{self.folder_name}/{filename}"
         try:
             obj = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
@@ -34,6 +37,14 @@ class S3FileRepository:
         except Exception as e:
             print(f"File {filename} not found: {e}")
             return False
+        
+    def get_names_of_files(self) -> list:
+        objects = self.s3_client.list_objects(Bucket=self.bucket_name, Prefix=f"{self.folder_name}/")
+        names = []
+        for obj in objects.get('Contents', []):
+            file_name = obj['Key'].replace(f"{self.folder_name}/", "")
+            names.append(file_name)
+        return names
 
     def delete_data(self, filename: str) -> bool:
         key = f"{self.folder_name}/{filename}"

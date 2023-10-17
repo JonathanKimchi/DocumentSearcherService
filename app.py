@@ -141,4 +141,4 @@ def upload_slack_messages_to_s3():
     return jsonify({"message": "Slack messages uploaded successfully"}), 200
     
 if __name__ == '__main__':
-    app.run(debug=False, port=3000)
+    app.run(debug=True, port=3000)

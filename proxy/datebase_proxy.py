@@ -4,7 +4,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain.vectorstores import Chroma
-from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceBgeEmbeddings
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.document_loaders import NotionDirectoryLoader
 from model.ModelFactory import model_factory
 import time
 import datetime
@@ -21,16 +22,23 @@ from repository.S3FileRepository import S3FileRepository
 from langchain.document_loaders import S3DirectoryLoader
 from langchain.document_loaders import JSONLoader
 
+from loader.notion import CONTENT_TYPE_JSON, NOTION_VERSION, load_notion, get_notion_loaders, convert_documents_into_text, get_notion_header
+
 class DatabaseProxy:
     def __init__(self, client_id):
         self.client_id = client_id
         self.s3_repository = S3FileRepository(client_id)
+        self.s3_repository_notion = S3FileRepository(self.get_notion_client_id())
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
         # TODO: initialize different file repositories based on the client_id or based on the environment variable
+
+    def get_notion_client_id(self):
+        return self.client_id + "_notion"
 
     def set_client_id(self, client_id: str):
         self.client_id = client_id
         self.s3_repository.set_folder_name(client_id)
+        self.s3_repository_notion.set_folder_name(self.get_notion_client_id())
 
     def get_client_id(self):
         return self.client_id
@@ -58,15 +66,57 @@ class DatabaseProxy:
                 self.s3_repository.update_data(data=text_bytes, filename=f"{channel['name']}.txt")
         return
     
+    def save_notion_data_to_s3(self, notion_access_token):
+        header = get_notion_header(notion_access_token)
+
+        # Fetch list of all pages
+        document_loaders = get_notion_loaders(header)
+        if not document_loaders:
+            return
+        
+        documents = []
+
+        for document_loader in document_loaders:
+            # Fetch messages from each channel
+            documents.extend(document_loader.load())
+
+        # Convert messages to text string
+        text_string = convert_documents_into_text(documents)
+
+        print("Notion: ", text_string)
+        print(f"Uploading notion data to S3...")
+        self.s3_repository.update_data(data=text_bytes, filename=f"notion_data.json")
+    
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
         # TODO: replace this loader with a loaderFactory.
         # TODO: don't make API calls here to save on cost.
-        self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id)
+        self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id+"/")
         data = self.loader.load()
+
+        # load the notion data
+        found_files = self.s3_repository_notion.get_names_of_files()
+
+        for file in found_files:
+            # get_data
+            file_data = self.s3_repository_notion.download_data(file)
+            # write to disk in notion_db folder
+            with open(f"notion_db/{file}", "wb") as f:
+                f.write(file_data)
+            # unzip the file, delete the zip file, and move the contents of the folder to the notion_db folder
+            os.system(f"unzip notion_db/{file} -d notion_db")
+            # delete the zip file
+            #os.remove(f"notion_db/{file}")
+            # load the notion data
+            notion_loader = NotionDirectoryLoader("notion_db")
+            notion_data = notion_loader.load()
+            data.extend(notion_data)
+            # delete the file locally
+            os.remove(f"notion_db/{file}")
+        
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
         self.index = VectorstoreIndexCreator().from_documents(texts)
-        self.embedding_function = HuggingFaceBgeEmbeddings(model_name='BAAI/bge-large-en')
+        self.embedding_function = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
         self.db = Chroma(persist_directory='db', embedding_function=self.embedding_function)
         self.retriever = self.index.vectorstore.as_retriever(search_kwargs={"k": 10})
 
@@ -74,8 +124,8 @@ class DatabaseProxy:
         model = model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
         # TODO: Add this back after we finish demos for latency testing.
-        # compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
-        # compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
+        compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
+        compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
         qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=self.retriever, return_source_documents=True)
 
         start = time.time()
@@ -104,8 +154,12 @@ class DatabaseProxy:
         return source_filenames
 
     def update_data(self, data: bytes, filename: str):
-        self.s3_repository.update_data(data, filename)
-        self.load_database()  # Re-load the database
+        # if the data is a zip file, then upload it to the notion folder
+        if filename.endswith(".zip"):
+            self.s3_repository_notion.update_data(data, filename)
+        else:
+            self.s3_repository.update_data(data, filename)
+        self.load_database()  # Reload the database
 
     def download_data(self, filename: str):
         return self.s3_repository.download_data(filename)
