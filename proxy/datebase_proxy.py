@@ -42,6 +42,9 @@ class DatabaseProxy:
         return self.client_id
     
     def save_slack_conversations_to_s3(self, slack_access_token):
+        if not slack_access_token:
+            return
+
         # Fetch list of all channels
         slack_proxy = SlackProxy(slack_access_token)
         channels = slack_proxy.fetch_channels()
@@ -65,6 +68,8 @@ class DatabaseProxy:
         return
     
     def save_notion_data_to_s3(self, notion_access_token):
+        if not notion_access_token:
+            return
 
         # Fetch list of all pages
         text_string = fetch_and_convert_notion_data(notion_access_token)
