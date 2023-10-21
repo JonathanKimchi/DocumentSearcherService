@@ -23,6 +23,7 @@ from langchain.document_loaders import S3DirectoryLoader
 from langchain.document_loaders import JSONLoader
 
 from loader.notion import CONTENT_TYPE_JSON, NOTION_VERSION, fetch_and_convert_notion_data
+from loader.LinearFetcher import LinearFetcher
 
 class DatabaseProxy:
     def __init__(self, client_id):
@@ -78,6 +79,18 @@ class DatabaseProxy:
         print("Notion: ", text_string)
         print(f"Uploading notion data to S3...")
         self.s3_repository.update_data(data=text_bytes, filename=f"notion_data.txt")
+
+    def save_linear_data_to_s3(self, linear_access_token):
+        if not linear_access_token:
+            return
+
+        # Fetch list of all issues
+        text_string = LinearFetcher.fetch_and_convert_issues(linear_access_token)
+        text_bytes = text_string.encode('utf-8')
+
+        print("Linear: ", text_string)
+        print(f"Uploading linear data to S3...")
+        self.s3_repository.update_data(data=text_bytes, filename=f"linear_data.txt")
     
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
