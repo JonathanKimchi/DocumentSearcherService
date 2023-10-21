@@ -22,11 +22,9 @@ def notion_get_blocks(page_id: str, headers: dict):
     )
     return res.json()
 
-
 def notion_search(query: dict, headers: dict):
-    res = requests.post(NOTION_SEARCH_URL, headers=headers, data=query)
+    res = requests.post(NOTION_SEARCH_URL, headers=headers, json=query)  # use json instead of data
     return res.json()
-
 
 def get_page_text(page_id: str, headers: dict):
     page_text = []
@@ -40,77 +38,39 @@ def get_page_text(page_id: str, headers: dict):
                 page_text.append(plain_text)
     return page_text
 
-def get_notion_db_loader(database_id: str, headers: dict):
-    # integration token == Bearer token
-    print("headers:", headers)
-    print("database_id:", database_id)
-    return NotionDBLoader(
-        integration_token=headers.get("Authorization").replace("Bearer ", ""),
-        database_id=database_id.replace("-", ""),
-        request_timeout_sec=30,
-    )
-
-def get_notion_loaders(headers: dict):
-    document_loaders = []
-    all_notion_documents = notion_search({}, headers)
-    print(all_notion_documents)
-    items = all_notion_documents.get("results")
-    for item in items:
-        object_type = item.get("object")
-        object_id = item.get("id")
-        url = item.get("url")
-        title = ""
-        
-        if object_type == "database":
-            document_loaders.append(get_notion_db_loader(object_id, headers))
-
-    return document_loaders
-
 def load_notion(headers: dict) -> list:
     documents = []
     all_notion_documents = notion_search({}, headers)
-    print(all_notion_documents)
     items = all_notion_documents.get("results")
     for item in items:
         object_type = item.get("object")
         object_id = item.get("id")
-        url = item.get("url")
-        title = ""
-        page_text = []
 
         if object_type == "page":
             title_content = item.get("properties").get("title")
+            title = ""
             if title_content:
-                title = (
-                    title_content.get("title")[0].get("text").get("content")
-                )
-            elif item.get("properties").get("Name"):
-                if len(item.get("properties").get("Name").get("title")) > 0:
-                    title = (
-                        item.get("properties")
-                        .get("Name")
-                        .get("title")[0]
-                        .get("text")
-                        .get("content")
-                    )
+                title = title_content.get("title")[0].get("text").get("content")
+            elif item.get("properties").get("Name") and len(item.get("properties").get("Name").get("title")) > 0:
+                title = item.get("properties").get("Name").get("title")[0].get("text").get("content")
 
-            page_text.append([title])
-            page_content = get_page_text(object_id, headers)
-            page_text.append(page_content)
-
-            flat_list = [item for sublist in page_text for item in sublist]
-            text_per_page = ". ".join(flat_list)
+            page_text = [title] + get_page_text(object_id, headers)
+            text_per_page = ". ".join(page_text)
             if len(text_per_page) > 0:
-                documents.append(text_per_page)
+                documents.append({'text': text_per_page})  # changed to a dictionary format for compatibility
 
     return documents
 
 def convert_documents_into_text(messages):
-        print("messages:", messages)
-        text = ''
-        for message in messages:
-            # convert messages into text, including the user name and timestamp
-            text += message['text']
-            text += '\n\n'
-            
-        return text
+    text = ''
+    for message in messages:
+        text += message['text']
+        text += '\n\n'
+    return text
+
+# Integrate both functions
+def fetch_and_convert_notion_data(notion_api_key: str = "Test"):
+    headers = get_notion_header(notion_api_key)
+    documents = load_notion(headers)
+    text_data = convert_documents_into_text(documents)
+    return text_data
