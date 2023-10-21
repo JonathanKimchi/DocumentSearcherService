@@ -137,8 +137,10 @@ def upload_slack_messages_to_s3():
     slack_access_token = speakeasy_backend_proxy.get_slack_access_token_for_chatbot(client_id, request.user_encoded)
     print("saving slack conversations to s3")
     database_proxy.save_slack_conversations_to_s3(slack_access_token)
+    notion_access_token = speakeasy_backend_proxy.get_notion_access_token_for_chatbot(client_id, request.user_encoded)
+    database_proxy.save_notion_data_to_s3(notion_access_token)
     database_proxy.load_database()
     return jsonify({"message": "Slack messages uploaded successfully"}), 200
     
 if __name__ == '__main__':
-    app.run(debug=False, port=3000)
+    app.run(debug=True, port=3000)

@@ -5,6 +5,7 @@ from langchain.indexes import VectorstoreIndexCreator
 from langchain.chains import RetrievalQA
 from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.document_loaders import NotionDirectoryLoader
 from model.ModelFactory import model_factory
 import time
 import datetime
@@ -21,12 +22,17 @@ from repository.S3FileRepository import S3FileRepository
 from langchain.document_loaders import S3DirectoryLoader
 from langchain.document_loaders import JSONLoader
 
+from loader.notion import CONTENT_TYPE_JSON, NOTION_VERSION, fetch_and_convert_notion_data
+
 class DatabaseProxy:
     def __init__(self, client_id):
         self.client_id = client_id
         self.s3_repository = S3FileRepository(client_id)
         # TODO: Add load_database() to constructor after adding error handling for when there is no data in the directory.
         # TODO: initialize different file repositories based on the client_id or based on the environment variable
+
+    def get_notion_client_id(self):
+        return self.client_id + "_notion"
 
     def set_client_id(self, client_id: str):
         self.client_id = client_id
@@ -58,12 +64,23 @@ class DatabaseProxy:
                 self.s3_repository.update_data(data=text_bytes, filename=f"{channel['name']}.txt")
         return
     
+    def save_notion_data_to_s3(self, notion_access_token):
+
+        # Fetch list of all pages
+        text_string = fetch_and_convert_notion_data(notion_access_token)
+        text_bytes = text_string.encode('utf-8')
+
+        print("Notion: ", text_string)
+        print(f"Uploading notion data to S3...")
+        self.s3_repository.update_data(data=text_bytes, filename=f"notion_data.txt")
+    
     def load_database(self):
         # TODO: deprecate VectorstoreIndexCreator. Make sure all new data is added to the db
         # TODO: replace this loader with a loaderFactory.
         # TODO: don't make API calls here to save on cost.
-        self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id)
+        self.loader = S3DirectoryLoader(bucket='speakeasy-s3-bucket', prefix=self.client_id+"/")
         data = self.loader.load()
+
         texts = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0).split_documents(data)
         self.index = VectorstoreIndexCreator().from_documents(texts)
         self.embedding_function = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
@@ -74,8 +91,8 @@ class DatabaseProxy:
         model = model_factory.get_model(model_type)
         llm = model.get_model_pipeline()
         # TODO: Add this back after we finish demos for latency testing.
-        # compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
-        # compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
+        compressor = LLMChainExtractor.from_llm(ChatOpenAI(temperature=0.25))
+        compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=self.retriever)
         qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=self.retriever, return_source_documents=True)
 
         start = time.time()
@@ -105,7 +122,7 @@ class DatabaseProxy:
 
     def update_data(self, data: bytes, filename: str):
         self.s3_repository.update_data(data, filename)
-        self.load_database()  # Re-load the database
+        self.load_database()  # Reload the database
 
     def download_data(self, filename: str):
         return self.s3_repository.download_data(filename)
