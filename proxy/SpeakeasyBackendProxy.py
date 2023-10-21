@@ -38,6 +38,12 @@ class SpeakeasyBackendProxy:
         data = {'chatbotId': chatbot_id}
         result = self.post_request(url, data, token)
         return result.get("accessToken", None)
+    
+    def get_linear_access_token_for_chatbot(self, chatbot_id, token):
+        url = f"{self.backend_url}/chatbot/linear/get-access-token-for-chatbot"
+        data = {'chatbotId': chatbot_id}
+        result = self.post_request(url, data, token)
+        return result.get("accessToken", None)
 
 
 # Initialize the SpeakeasyBackendProxy
